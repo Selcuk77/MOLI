@@ -1,29 +1,17 @@
 # MOLİ
 
-Turkish and English Grade 8 mathematics learning platform. The first working lesson explores slope through an interactive ramp.
+Bilingual Grade 8 mathematics platform, with student/guardian and teacher account flows and an interactive slope lesson.
 
-## Deploy on Vercel
+## Current version
 
-Import `Selcuk77/MOLI` as a new Vercel project. Use **Other** for Framework Preset, leave the Root Directory at the repository root, and leave build and install commands empty. The deployment configuration is in `vercel.json`. No environment variables are required for this prototype.
+- Turkish and English login, role-based registration, email confirmation, password reset, profile settings, and sign-out
+- Supabase Auth serverless API with HttpOnly cookie sessions and server-verified identity
+- Administrator-controlled teacher status and owner-only profile access
+- Honest teacher workspace empty states; no sample student records
+- Interactive ramp lesson, scripted guidance, prerequisite check, practice, local transcripts, study plans, and calendar export
 
-## Current functionality
+Real accounts require the Supabase setup in [SETUP.md](SETUP.md). Until configuration is present, registration is disabled and the sample lesson remains accessible without an account. Live AI tutoring and server-synced learning records are not connected yet.
 
-- Turkish and English interface
-- Interactive ramp with contextual scripted guidance
-- Optional browser speech synthesis and speech recognition
-- Prerequisite check and suggested learning path
-- Multiple-choice feedback and saved open responses
-- Weekly study plan and calendar export with reminders
-- Text transcript export
+## Development and deployment
 
-## Current limits
-
-This is a prototype. Guidance is scripted, not a connected AI model. Accounts, server persistence, teacher and parent access, background notifications, and rubric grading are not connected. Data is stored in the browser. Browser speech features depend on browser support; speech recognition may use the browser provider's service. No audio file is stored by this application.
-
-## Local development
-
-Serve this directory using a local static HTTP server, such as `python3 -m http.server 8000`, and open `http://localhost:8000`.
-
-## Next development
-
-Add authenticated student/parent/teacher roles, server-side data storage, AI voice tutoring, expert rubrics, and curriculum content. Never commit API keys. Add future service secrets through Vercel environment variables.
+Use `npm ci`, `npm test`, and `npm run build`. Vercel publishes only `public/` and runs `api/auth.js` as a serverless function. Updates to `main` deploy through the GitHub connection. Environment variables are described in `.env.example`; never commit live credentials.
