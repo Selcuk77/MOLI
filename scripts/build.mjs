@@ -2,7 +2,7 @@ import { access, readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 await import('./vendor.mjs');
 for (const file of ['public/index.html','public/lesson.html','public/auth.js','public/app.js','public/teacher.html']) await access(file);
-for (const file of ['public/auth.js','public/app.js','public/account.js','api/auth.js','lib/auth-core.js','public/learning-core.js','public/classroom-content.js','public/question-content.js','public/math.js','public/learn.js','api/learning.js','api/tutor.js','api/phone.js','api/reminders.js','lib/server-auth.js','lib/services.js']) execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
+for (const file of ['public/auth.js','public/app.js','public/account.js','api/auth.js','lib/auth-core.js','public/learning-core.js','public/classroom-content.js','public/question-content.js','public/math.js','public/classroom-tools.js','public/learn.js','api/learning.js','api/tutor.js','api/phone.js','api/reminders.js','lib/server-auth.js','lib/services.js']) execFileSync(process.execPath,['--check',file],{stdio:'inherit'});
 await import('../api/auth.js');
 for (const name of ['learning','tutor','phone','reminders']) await import('../api/'+name+'.js');
 JSON.parse(await readFile('vercel.json','utf8'));
