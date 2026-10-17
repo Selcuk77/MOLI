@@ -1,3 +1,5 @@
+import {lgsQuestion} from './lgs-bank.js';
+import {lessonCheck} from './lesson-checks.js';
 import {calculate,companions} from './classroom-tools.js';
 import {enrichQuestion} from './question-content.js';
 // Shared, deterministic learning rules. Authoritative grading runs on the server.
@@ -23,6 +25,7 @@ export const lessons={
 };
 const gcd=(a,b)=>b?gcd(b,a%b):a;
 export function question(topic,seed=1,level=1,lang='tr',open=false){
+ if(seed>=40)return lgsQuestion(topic,seed,level,lang,open);
  const a=2+seed%5,b=3+(seed*3)%5,c=2+(seed*7)%4;let text,answer,hint;
  switch(topic){
  case'factors':answer=level===2?a*b/gcd(a,b):gcd(a*2,b*2);text=level===2?pair(`${a} ve ${b} sayılarının EKOK’u kaçtır?`,`What is the LCM of ${a} and ${b}?`):pair(`${a*2} ve ${b*2} sayılarının EBOB’u kaçtır?`,`What is the GCD of ${a*2} and ${b*2}?`);hint=pair('Ortak bölenleri veya ortak katları listele.','List common divisors or common multiples.');break;
@@ -44,7 +47,7 @@ export function question(topic,seed=1,level=1,lang='tr',open=false){
  return enrichQuestion({id:`${topic}:${seed}:${level}`,topic,seed,level,text:text[lang],answer,hint:hint[lang],open,choices},lang);
 }
 export function numeric(s){try{return calculate(s)}catch{return NaN}}
-export function correct(q,value){const n=numeric(value);return Number.isFinite(n)&&Math.abs(n-q.answer)<=Math.max(.0001,Math.abs(q.answer)*.0001)}
+export function correct(q,value){const n=numeric(value);return Number.isFinite(n)&&Math.abs(n-q.answer)<=Math.max(.0001,Math.abs(q.answer)*1e-8)}
 export const prerequisites={powers:['factors'],roots:['powers'],algebra:['powers'],equations:['algebra'],slope:['equations'],inequalities:['equations'],congruence:['triangles'],solids:['roots','triangles'],probability:['data']};
 export function buildOrder(scores){const out=[];while(out.length<topics.length){const ready=topics.filter(t=>!out.includes(t.id)&&(prerequisites[t.id]||[]).every(id=>out.includes(id)));ready.sort((a,b)=>(scores.find(x=>x.id===a.id)?.score||0)-(scores.find(x=>x.id===b.id)?.score||0)||topics.indexOf(a)-topics.indexOf(b));out.push(ready[0].id)}return out}
 export const diagnosticTopics=['factors','powers','roots','data','probability','algebra','equations','slope','inequalities','triangles','congruence','transformations','solids'];
@@ -55,10 +58,10 @@ export function diagnosticQuestion(s,lang='tr'){const i=s.diagnostic.answers.len
 export function baseline(s){return topics.map(t=>{const a=s.diagnostic.answers.filter(x=>x.topic===t.id);return {...t,score:a.length?Math.round(100*a.filter(x=>x.correct).length/a.length):null}})}
 export function unlocked(s,id){const i=s.order.indexOf(id);return s.diagnostic.done&&i>=0&&(i===0||s.units[s.order[i-1]]?.passed===true)}
 export const SLIDE_COUNT=5;
-function award(s,a,topic){if(!a.correct||s.rewards.ids.includes(a.id))return;s.rewards.ids.push(a.id);s.rewards.points+=10;s.rewards.correct++;const previous=s.units[topic]?.answers||[];if(previous.some(x=>x.id===a.id&&!x.correct)){s.rewards.recoveries++;}}
-export function prepare(s){s.companion=companions.some(c=>c.id===s.companion)?s.companion:'gauss';if(!s.rewards){s.rewards={points:0,correct:0,recoveries:0,ids:[]};for(const [id,u]of Object.entries(s.units)){for(const a of u.answers||[])if(a.mode!=='test')award(s,a,id);for(const t of u.attempts||[])for(const a of t.answers||[])award(s,a,id);}}for(const u of Object.values(s.units)){if(!u.classroomVersion){u.classroomVersion=2;u.slide=0;u.guidedCount=0;u.hintLevel=0;u.lastWrong=false;if(u.mode==='lesson')u.step=0;}u.notes??='';u.boardReplies??=[];}return s}
-export function unitQuestion(s,id,lang='tr'){const u=s.units[id];if(!u||['done','lesson','ready'].includes(u.mode))return null;const attempt=u.attempts.length,seed=u.mode==='test'?100+attempt*7+u.testAnswers.length:u.mode==='practice'?250+u.practiceCount:40+(u.guidedCount||0);return question(id,seed,u.mode==='test'?1+(u.testAnswers.length%2):1,lang,u.mode==='test'?u.testAnswers.length%2===1:true)}
-export function supportFor(s,id,lang='tr'){const u=s.units[id];if(!u||!['guided','practice'].includes(u.mode)||!u.lastWrong)return null;const q=unitQuestion(s,id,lang);return {level:u.hintLevel,hint:q.hint,steps:q.steps.slice(0,u.hintLevel)}}
+function award(s,a,topic){if(!a.correct||s.rewards.ids.includes(a.id))return;s.rewards.ids.push(a.id);s.rewards.points+=10;s.rewards.correct++;if(s.rewards.correct%5===0)s.rewards.points+=15;const previous=s.units[topic]?.answers||[];if(previous.some(x=>x.id===a.id&&!x.correct)){s.rewards.recoveries++;}}
+export function prepare(s){s.companion=companions.some(c=>c.id===s.companion)?s.companion:'gauss';if(!s.rewards){s.rewards={points:0,correct:0,recoveries:0,ids:[]};for(const [id,u]of Object.entries(s.units)){for(const a of u.answers||[])if(a.mode!=='test')award(s,a,id);for(const t of u.attempts||[])for(const a of t.answers||[])award(s,a,id);}}for(const u of Object.values(s.units)){if(!u.classroomVersion){u.classroomVersion=2;u.slide=0;u.guidedCount=0;u.hintLevel=0;u.lastWrong=false;if(u.mode==='lesson')u.step=0;}u.notes??='';u.boardReplies??=[];u.checks??={};u.teachingVersion??=3;u.freeCount??=0;u.freeCorrect??=0;u.freeLevel??=1;u.testSize??=5;}return s}
+export function unitQuestion(s,id,lang='tr'){const u=s.units[id];if(!u||['done','lesson','ready'].includes(u.mode))return null;const attempt=u.attempts.length,seed=u.mode==='free'?10000+u.freeCount:u.mode==='test'?100+attempt*7+u.testAnswers.length:u.mode==='practice'?250+u.practiceCount:40+(u.guidedCount||0);return question(id,seed,u.mode==='test'?1+(u.testAnswers.length%2):u.mode==='free'?u.freeLevel:1,lang,u.mode==='test'?u.testAnswers.length%2===1:u.mode==='free'?u.freeCount%3===0:true)}
+export function supportFor(s,id,lang='tr'){const u=s.units[id];if(!u||!['guided','practice','free'].includes(u.mode)||!u.lastWrong)return null;const q=unitQuestion(s,id,lang);return {level:u.hintLevel,hint:q.hint,steps:q.steps.slice(0,u.hintLevel)}}
 export function apply(s,action,p={},lang='tr'){
  prepare(s);
  if(action==='companion'){if(!companions.some(c=>c.id===p.id))throw new Error('invalid_request');s.companion=p.id;return s}
@@ -69,25 +72,30 @@ export function apply(s,action,p={},lang='tr'){
  return s;
  }
  if(action==='open'){
- if(!unlocked(s,p.topic))throw new Error('locked');if(!s.units[p.topic])s.units[p.topic]={classroomVersion:2,slide:0,guidedCount:0,hintLevel:0,lastWrong:false,notes:'',boardReplies:[],step:0,mode:'lesson',attempts:[],testAnswers:[],practiceCount:0,practiceCorrect:0,passed:false,answers:[]};record(s,'lesson_opened',{topic:p.topic});return s;
+ if(!unlocked(s,p.topic))throw new Error('locked');if(!s.units[p.topic])s.units[p.topic]={classroomVersion:2,teachingVersion:3,checks:{},freeCount:0,freeCorrect:0,freeLevel:1,testSize:10,slide:0,guidedCount:0,hintLevel:0,lastWrong:false,notes:'',boardReplies:[],step:0,mode:'lesson',attempts:[],testAnswers:[],practiceCount:0,practiceCorrect:0,passed:false,answers:[]};record(s,'lesson_opened',{topic:p.topic});return s;
  }
- if(['next-slide','hint','begin-test','notes','review'].includes(action)){
+ if(['next-slide','lesson-check','hint','begin-test','notes','review','free','return-work','free-skip'].includes(action)){
  const u=s.units[p.topic];if(!u||!unlocked(s,p.topic))throw new Error('locked');
- if(action==='next-slide'){if(u.mode!=='lesson')throw new Error('invalid_step');u.slide++;record(s,'explanation_step',{topic:p.topic,slide:u.slide});if(u.slide>=SLIDE_COUNT){u.slide=SLIDE_COUNT-1;u.mode='guided';u.guidedCount=0;u.hintLevel=0;u.lastWrong=false;}return s}
- if(action==='hint'){if(!['guided','practice'].includes(u.mode)||!u.lastWrong)throw new Error('try_first');u.hintLevel=Math.min(3,(u.hintLevel||0)+1);record(s,'guided_hint',{topic:p.topic,level:u.hintLevel});return s}
- if(action==='begin-test'){if(u.mode!=='ready'||u.guidedCount<2)throw new Error('practice_required');u.mode='test';u.testAnswers=[];record(s,'independent_test_started',{topic:p.topic});return s}
+ if(action==='free'){if(['lesson','test'].includes(u.mode))throw new Error('practice_required');if(u.mode!=='free')u.returnMode=u.mode;u.mode='free';u.lastWrong=false;u.hintLevel=0;record(s,'free_practice_started',{topic:p.topic});return s}
+ if(action==='free-skip'){if(u.mode!=='free'||p.id!==unitQuestion(s,p.topic,lang).id)throw new Error('invalid_step');u.freeCount++;u.freeCorrect=0;u.freeLevel=1;u.lastWrong=false;u.hintLevel=0;record(s,'free_question_skipped',{topic:p.topic});return s}
+ if(action==='return-work'){if(u.mode!=='free')throw new Error('invalid_step');u.mode=u.returnMode||'ready';u.lastWrong=false;u.hintLevel=0;return s}
+ if(action==='lesson-check'){if(u.mode!=='lesson')throw new Error('invalid_step');const q=lessonCheck(p.topic,u.slide,lang);if(!q||p.id!==q.id||!q.choices.some(x=>x.value===p.value))throw new Error('invalid_request');u.checks[u.slide]={correct:p.value===q.answer,value:p.value};message(s,'user',q.text+' · '+q.choices.find(x=>x.value===p.value).text,p.topic);record(s,'lesson_check',{topic:p.topic,correct:p.value===q.answer});return s}
+ if(action==='next-slide'){if(u.mode!=='lesson')throw new Error('invalid_step');if(u.teachingVersion>=3&&lessonCheck(p.topic,u.slide,lang)&&!u.checks[u.slide]?.correct)throw new Error('check_required');u.slide++;record(s,'explanation_step',{topic:p.topic,slide:u.slide});if(u.slide>=SLIDE_COUNT){u.slide=SLIDE_COUNT-1;u.mode='guided';u.guidedCount=0;u.hintLevel=0;u.lastWrong=false;}return s}
+ if(action==='hint'){if(!['guided','practice','free'].includes(u.mode)||!u.lastWrong)throw new Error('try_first');u.hintLevel=Math.min(3,(u.hintLevel||0)+1);record(s,'guided_hint',{topic:p.topic,level:u.hintLevel});return s}
+ if(action==='begin-test'){if(u.mode!=='ready'||u.guidedCount<2)throw new Error('practice_required');u.mode='test';u.testSize=10;u.testAnswers=[];record(s,'independent_test_started',{topic:p.topic});return s}
  if(action==='notes'){if(typeof p.text!=='string'||p.text.length>3000)throw new Error('invalid_request');u.notes=p.text;record(s,'board_note',{topic:p.topic});return s}
- if(action==='review'){u.mode='lesson';u.slide=0;u.guidedCount=0;u.hintLevel=0;u.lastWrong=false;record(s,'lesson_review',{topic:p.topic});return s}
+ if(action==='review'){u.mode='lesson';u.slide=0;u.checks={};u.teachingVersion=3;u.guidedCount=0;u.hintLevel=0;u.lastWrong=false;record(s,'lesson_review',{topic:p.topic});return s}
  }
  if(action==='answer'){
  const u=s.units[p.topic],q=unitQuestion(s,p.topic,lang);if(!unlocked(s,p.topic)||!u||!q)throw new Error('locked');if(p.id!==q.id)throw new Error('stale_question');const ok=correct(q,p.value);message(s,'assistant',q.text,p.topic);message(s,'user',String(p.value)+(p.reason?' · '+p.reason:''),p.topic);if(u.mode!=='test')message(s,'assistant',ok?(lang==='tr'?'İlişkiyi doğru kurdun. Şimdi sonucu yorumlayalım.':'You modelled the relationship correctly. Now interpret the result.') : q.hint,p.topic);const a={id:q.id,value:String(p.value).slice(0,200),reason:String(p.reason||'').slice(0,1500),correct:ok,at:new Date().toISOString(),mode:u.mode};u.answers.push(a);if(u.answers.length>300)u.answers.shift();record(s,'answer',{topic:p.topic,correct:ok,mode:u.mode});if(u.mode!=='test')award(s,a,p.topic);
  if(u.mode==='guided'){if(ok){u.guidedCount++;u.hintLevel=0;u.lastWrong=false;if(u.guidedCount>=2)u.mode='ready'}else{u.lastWrong=true;u.hintLevel=Math.max(1,u.hintLevel||0)}}
- else if(u.mode==='test'){u.testAnswers.push(a);if(u.testAnswers.length===5){const score=u.testAnswers.filter(x=>x.correct).length*20;for(const a of u.testAnswers)award(s,a,p.topic);u.attempts.push({score,at:new Date().toISOString(),answers:u.testAnswers});record(s,'test_completed',{topic:p.topic,score});message(s,'assistant',(lang==='tr'?'Test sonucu: ':'Test result: ')+score+'%. '+(score>=PASS?(lang==='tr'?'Tebrikler! Sonraki konu açıldı.':'Well done! The next topic is unlocked.'):(lang==='tr'?'Yanıtların üzerinden birlikte geçelim. Sonra yeniden deneyebiliriz.':'Let’s review your responses together, then try again.')),p.topic);u.passed=u.passed||score>=PASS;u.mode=score>=PASS?'done':'practice';u.practiceCount=0;u.practiceCorrect=0;u.hintLevel=0;u.lastWrong=false;if(u.attempts.length>30)u.attempts.shift()}}
+ else if(u.mode==='free'){if(ok){u.freeCount++;u.freeCorrect++;u.freeLevel=u.freeCorrect>=3?2:1;u.lastWrong=false;u.hintLevel=0}else{u.freeCorrect=0;u.lastWrong=true;u.hintLevel=Math.max(1,u.hintLevel||0)}}
+ else if(u.mode==='test'){u.testAnswers.push(a);if(u.testAnswers.length===(u.testSize||5)){const score=u.testAnswers.filter(x=>x.correct).length*100/(u.testSize||5);for(const a of u.testAnswers)award(s,a,p.topic);u.attempts.push({score,at:new Date().toISOString(),answers:u.testAnswers});record(s,'test_completed',{topic:p.topic,score});message(s,'assistant',(lang==='tr'?'Test sonucu: ':'Test result: ')+score+'%. '+(score>=PASS?(lang==='tr'?'Tebrikler! Sonraki konu açıldı.':'Well done! The next topic is unlocked.'):(lang==='tr'?'Yanıtların üzerinden birlikte geçelim. Sonra yeniden deneyebiliriz.':'Let’s review your responses together, then try again.')),p.topic);u.passed=u.passed||score>=PASS;u.mode=score>=PASS?'done':'practice';u.practiceCount=0;u.practiceCorrect=0;u.hintLevel=0;u.lastWrong=false;if(u.attempts.length>30)u.attempts.shift()}}
  else if(u.mode==='practice'){if(ok){u.practiceCount++;u.practiceCorrect++;u.hintLevel=0;u.lastWrong=false}else{u.practiceCorrect=0;u.lastWrong=true;u.hintLevel=Math.max(1,u.hintLevel||0)}}
  return s;
  }
- if(action==='retest'){const u=s.units[p.topic];if(!u||!unlocked(s,p.topic)||u.mode!=='practice'||u.practiceCorrect<2)throw new Error('practice_required');u.mode='test';u.testAnswers=[];u.lastWrong=false;u.hintLevel=0;return s}
- if(action==='extra'){const u=s.units[p.topic];if(!u?.passed)throw new Error('locked');u.mode='test';u.testAnswers=[];return s}
+ if(action==='retest'){const u=s.units[p.topic];if(!u||!unlocked(s,p.topic)||u.mode!=='practice'||u.practiceCorrect<2)throw new Error('practice_required');u.mode='test';u.testSize=10;u.testAnswers=[];u.lastWrong=false;u.hintLevel=0;return s}
+ if(action==='extra'){const u=s.units[p.topic];if(!u?.passed)throw new Error('locked');u.mode='test';u.testSize=10;u.testAnswers=[];return s}
  if(action==='plan'){
  const days=[...new Set(p.days)].filter(x=>Number.isInteger(x)&&x>=0&&x<7);if(!s.diagnostic.done||!days.length||!/^([01]\d|2[0-3]):[0-5]\d$/.test(p.time)||!['Europe/Istanbul','America/New_York','Europe/London','UTC'].includes(p.zone))throw new Error('invalid_plan');
  s.plan={days,time:p.time,zone:p.zone,minutes:[20,30,45].includes(p.minutes)?p.minutes:30,email:p.email===true,sms:p.sms===true,updatedAt:new Date().toISOString()};record(s,'plan_saved');return s;

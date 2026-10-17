@@ -40,12 +40,11 @@ export function thinkingTurn({seconds=10,onTick,onReady,setTimer=setTimeout,clea
 }
 
 export function rewardSummary(s){const r=s.rewards||{points:0,correct:0,recoveries:0};const mastered=Object.values(s.units).filter(u=>u.passed).length;
- return {...r,mastered,level:1+Math.floor(r.points/100),next:100-r.points%100,badges:[
+ const level=1+Math.floor(r.points/100),ranks=[['Meraklı','Curious'],['İz sürücü','Trail finder'],['Problem avcısı','Problem explorer'],['Bağlantı ustası','Connection maker'],['Matematik kâşifi','Math explorer']];
+ return {...r,mastered,level,next:100-r.points%100,rank:ranks[Math.min(4,Math.floor((level-1)/3))],mission:{current:r.correct%5,target:5,round:Math.floor(r.correct/5)+1},badges:[
  {id:'explorer',icon:'✦',tr:'İlk keşif',en:'First discovery',earned:s.diagnostic.done,progress:s.diagnostic.answers.length,target:26},
- {id:'first',icon:'★',tr:'İlk doğru adım',en:'First correct step',earned:r.correct>=1,progress:r.correct,target:1},
- {id:'five',icon:'◆',tr:'Fikir avcısı',en:'Idea finder',earned:r.correct>=5,progress:r.correct,target:5},
+ ...[1,5,10,25,50,100,200].map((target,i)=>({id:'steps-'+target,icon:['★','◆','✧','✹','✺','♜','♛'][i],tr:target+' sağlam adım',en:target+' strong steps',earned:r.correct>=target,progress:r.correct,target})),
  {id:'retry',icon:'↗',tr:'Yeniden denedim',en:'Tried again',earned:r.recoveries>=1,progress:r.recoveries,target:1},
- {id:'master',icon:'♜',tr:'Konu ustası',en:'Topic master',earned:mastered>=1,progress:mastered,target:1},
- {id:'ten',icon:'✧',tr:'On sağlam adım',en:'Ten strong steps',earned:r.correct>=10,progress:r.correct,target:10}
+ ...[1,3,5,13].map(target=>({id:'master-'+target,icon:'⬡',tr:target+' konu ustalığı',en:target+' topics mastered',earned:mastered>=target,progress:mastered,target}))
  ]};
 }

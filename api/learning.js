@@ -1,3 +1,4 @@
+import {lessonCheck,publicCheck} from '../public/lesson-checks.js';
 import {authorized,bodyOf} from '../lib/server-auth.js';
 import {reminderEnabled,smsEnabled} from '../lib/services.js';
 import {initial,apply,diagnosticQuestion,unitQuestion,publicQuestion,correct,prepare,supportFor} from '../public/learning-core.js';
@@ -17,6 +18,6 @@ export default async function handler(req,res){
  // The client gets saved results, but never the answer to the active question.
  const safe=JSON.parse(JSON.stringify(state));const dq=state.diagnostic.done?null:publicQuestion(diagnosticQuestion(state,lang));const questions=Object.fromEntries(Object.keys(state.units).map(id=>[id,publicQuestion(unitQuestion(state,id,lang))]));
  const {data:contact}=await client.from('moli_contacts').select('phone,verified_at').eq('user_id',user.id).maybeSingle();
- return res.status(200).json({state:safe,revision:row.revision,diagnosticQuestion:dq,questions,feedback,support:Object.fromEntries(Object.keys(state.units).map(id=>[id,supportFor(state,id,lang)])),capabilities:{cloud:true,ai:!!process.env.AI_MODEL,email:reminderEnabled()&&!!process.env.RESEND_API_KEY&&!!process.env.REMINDER_FROM,sms:smsEnabled(),phoneVerified:!!contact?.verified_at,phone:contact?.phone||null}});
- }catch(e){return res.status(400).json({error:['locked','stale_question','practice_required','invalid_plan','invalid_step'].includes(e.message)?e.message:'invalid_request'})}
+ return res.status(200).json({state:safe,revision:row.revision,diagnosticQuestion:dq,questions,feedback,checks:Object.fromEntries(Object.entries(state.units).map(([id,u])=>[id,u.mode==='lesson'?publicCheck(lessonCheck(id,u.slide,lang)):null])),support:Object.fromEntries(Object.keys(state.units).map(id=>[id,supportFor(state,id,lang)])),capabilities:{cloud:true,ai:!!process.env.AI_MODEL,email:reminderEnabled()&&!!process.env.RESEND_API_KEY&&!!process.env.REMINDER_FROM,sms:smsEnabled(),phoneVerified:!!contact?.verified_at,phone:contact?.phone||null}});
+ }catch(e){return res.status(400).json({error:['locked','stale_question','practice_required','invalid_plan','invalid_step','check_required'].includes(e.message)?e.message:'invalid_request'})}
 }
