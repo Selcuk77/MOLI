@@ -14,6 +14,6 @@ transformations:[['y eksenine yansımada hangi koordinat değişir?','Which coor
 solids:[['Silindirin hacmi hangi ilişkiyle bulunur?','How is cylinder volume found?',['Taban alanı × yükseklik','Base area × height'],['Taban çevresi × yükseklik','Base perimeter × height'],['Yarıçap + yükseklik','Radius + height']],['Yarıçap 2, yükseklik 5 ve π = 3 ise hacim?','For r = 2, h = 5 and π = 3, what is the volume?',['60','60'],['30','30'],['20','20']],['Yarıçap iki katına çıkıp yükseklik sabit kalırsa?','If radius doubles at fixed height, what happens to volume?',['Dört katına çıkar','It quadruples'],['İki katına çıkar','It doubles'],['Değişmez','It stays fixed']]]
 };
 export function lessonCheck(id,slide,lang='tr'){
- const index={1:0,2:1,4:2}[slide];if(index===undefined||!items[id])return null;const row=items[id][index],en=lang==='en',shift=(slide+id.length)%3,choices=row.slice(2).map((x,i)=>({value:String(i),text:x[en?1:0]}));choices.push(...choices.splice(0,shift));return {id:`check:${id}:${slide}`,text:row[en?1:0],choices,answer:'0'};
+ const index={3:0,6:1,10:2}[slide];if(index===undefined||!items[id])return null;const row=items[id][index],en=lang==='en',shift=(slide+id.length)%3,choices=row.slice(2).map((x,i)=>({value:String(i),text:x[en?1:0]}));choices.push(...choices.splice(0,shift));return {id:`check:${id}:${slide}`,text:row[en?1:0],choices,answer:'0'};
 }
 export function publicCheck(q){if(!q)return null;const {answer,...rest}=q;return rest}

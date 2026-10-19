@@ -1,4 +1,4 @@
-import {deepenSlides} from './lesson-depth.js';
+import {buildCourse} from './lesson-course.js';
 const p=(tr,en)=>({tr,en});
 // Authored teaching sequences: context -> model -> worked example -> misconception -> transfer.
 const units={
@@ -34,7 +34,7 @@ solids:p('İlk satır dairesel tabanın alanını, ikinci satır silindirin hacm
 export function lessonSlides(id,lang='tr'){
  const u=units[id];if(!u)return [];const en=lang==='en';const copy=(tr,enText)=>en?enText:tr;
  const model=u.model.map(math=>({math:en?math.replaceAll('EBOB','GCD').replaceAll('EKOK','LCM').replaceAll('kırmızı','red').replaceAll('tüm bilye sayısı','all marbles').replaceAll('kırmızı bilye sayısı','red marbles').replaceAll('toplam','sum').replaceAll('veri sayısı','count').replaceAll('aynı işlem','same operation').replaceAll('iki taraf','both sides').replaceAll('dik üçgen','right triangle').replaceAll('taban','base').replaceAll('ekseni','axis'):math,note:''}));
- return deepenSlides([
+ return buildCourse([
  {title:copy('Bir durumdan başlayalım','Start with a situation'),speech:u.story[lang],lines:[{text:u.story[lang]}],visual:u.visual,prompt:copy('Neyi biliyoruz? Neyi bulmak istiyoruz?','What do we know? What are we trying to find?')},
  {title:copy('Durumu matematikle gösterelim','Build the mathematical model'),speech:modelSpeech[id][lang],lines:model,prompt:copy('Sembollerin her biri bu durumda neyi anlatıyor?','What does each symbol represent in this situation?')},
  {title:copy('Tahtada adım adım','Step by step on the board'),speech:copy('Şimdi örneği birlikte takip edelim. Her satırda yaptığımız işlemin nedenini açıklayacağım.','Follow the example with me. I will explain the reason for each step.'),lines:u.worked.map(([math,note])=>({math:en?math.replaceAll('EBOB','GCD').replaceAll('EKOK','LCM').replaceAll('kırmızı','red').replaceAll('mavi','blue').replaceAll('taban','base'):math,note:note[lang]})),visual:u.visual,prompt:copy('Hangi adımda neden bu işlemi yaptığımızı merak ettin?','Which step would you like to understand better?')},
